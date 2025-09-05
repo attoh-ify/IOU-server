@@ -15,7 +15,7 @@ interface ICategory extends Document {
 const FavouriteSchema = new Schema<IFavoutite>(
     {
         by: { type: String, required: true },
-        date: { type: Date, required: true, default: Date.now }
+        date: { type: Date, required: true, default: new Date() }
     },
     { _id: false }
 )

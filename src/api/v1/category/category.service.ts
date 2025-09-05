@@ -41,7 +41,7 @@ export class CategoryService {
 
         const mappedCategories = await Promise.all(
             categories.map(async (cat) => {
-                const voucher = await Voucher.find({ assignedTo: userId, category: cat.id });
+                const voucher = await Voucher.find({ voucherRecipient: userId, category: cat.id });
                 const voucherCount = voucher.length;
                 const voucherUnitCount = voucher.reduce(
                     (sum, doc) => sum + (doc.count || 0),
@@ -49,7 +49,6 @@ export class CategoryService {
                 )
 
                 return {
-                    id: cat.id,
                     name: cat.name,
                     icon: cat.icon,
                     favourite: cat.favourite.some(fav => fav.by === userId),
