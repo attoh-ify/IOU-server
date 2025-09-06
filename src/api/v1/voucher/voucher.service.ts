@@ -6,11 +6,11 @@ import { ApiError, ApiSuccess } from "../../../utils/responseHandler";
 
 export class VoucherService {
     static async create(data: CreateVoucherDTO, userId: string) {
-        const { title, category, description, count, voucherRecipient } = data;
+        const { title, description, count, voucherRecipient } = data;
 
         await VoucherService.checkIfVoucherExists(title, userId);
 
-        const voucher = new Voucher({ title, category, description, count, voucherCreator: userId, voucherRecipient });
+        const voucher = new Voucher({ title, description, count, voucherCreator: userId, voucherRecipient });
         await voucher.save();
 
         return ApiSuccess.created(
@@ -20,10 +20,10 @@ export class VoucherService {
     };
 
     static async getMyAssignedVouchers(data: GetVouchersDTO, userId: string) {
-        const { category, sortBy } = data;
+        const { sortBy } = data;
 
         const favourites = await Voucher.find({
-            voucherRecipient: userId, category, favourite: { $ne: null }
+            voucherRecipient: userId, favourite: { $ne: null }
         }).sort({ createdAt: -1 });
 
         let sortOption: Record<string, 1 | -1>;
@@ -38,7 +38,7 @@ export class VoucherService {
                 break;
         }
         const others = await Voucher.find({
-            voucherRecipient: userId, category, favourite: null
+            voucherRecipient: userId, favourite: null
         }).sort(sortOption);
 
         const vouchers = [...favourites, ...others];
@@ -52,31 +52,23 @@ export class VoucherService {
     static async getMyCreatedVouchers(data: GetMyVouchersDTO, userId: string) {
         const { sortBy } = data;
 
-        const vouchers = await Voucher.find({ voucherCreator: userId });
+        let sortOption: Record<string, 1 | -1>;
 
-        const groupedVouchers = vouchers.reduce<Record<string, any[]>>((acc, voucher) => {
-            if (!acc[voucher.category]) acc[voucher.category] = [];
-            acc[voucher.category].push(voucher);
-            return acc;
-        }, {});
-
-        function sortVouchers(voucher: any[], sortBy: string) {
-            switch (sortBy) {
-                case "createdAt":
-                    return voucher.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-                case "alphabetically":
-                default:
-                    return voucher.sort((a, b) => a.title.localeCompare(b.title));
-            }
+        switch (sortBy) {
+            case "createdAt":
+                sortOption = { createdAt: -1 }
+                break;
+            case "alphabetically":
+            default:
+                sortOption = { name: 1 }
+                break;
         }
 
-        for (const category in groupedVouchers) {
-            groupedVouchers[category] = sortVouchers(groupedVouchers[category], sortBy);
-        }
+        const vouchers = await Voucher.find({ voucherCreator: userId }).sort(sortOption);
 
         return ApiSuccess.ok(
             '',
-            { groupedVouchers }
+            { vouchers }
         );
     }
 
@@ -102,7 +94,6 @@ export class VoucherService {
                 }
 
                 return {
-                    category: voucher.category,
                     title: voucher.title,
                     description: voucher.description,
                     icon: voucher.icon,
@@ -142,7 +133,6 @@ export class VoucherService {
                 }
 
                 return {
-                    category: voucher.category,
                     title: voucher.title,
                     description: voucher.description,
                     icon: voucher.icon,
@@ -182,7 +172,6 @@ export class VoucherService {
                 }
 
                 return {
-                    category: voucher.category,
                     title: voucher.title,
                     description: voucher.description,
                     icon: voucher.icon,
@@ -203,7 +192,7 @@ export class VoucherService {
     }
 
     static async confirmVoucherCompletedByCreater(data: UserConfirmationDTO, userId: string) {
-        const { password, usageId } = data;
+        const { password, usageId, proofImage } = data;
 
         await VoucherService.confirmUsersPassword(userId, password);
 
@@ -213,7 +202,8 @@ export class VoucherService {
                 $set: {
                     creatorHasConfirmed: true,
                     status: "completed",
-                    completedDate: new Date()
+                    completedDate: new Date(),
+                    proofImage
                 }
             },
             { new: true }
@@ -234,8 +224,6 @@ export class VoucherService {
         const { password, usageId } = data;
 
         await VoucherService.confirmUsersPassword(userId, password);
-
-
 
         const usage = await Usage.findByIdAndUpdate(
             { _id: usageId, creatorHasConfirmed: true },
@@ -261,7 +249,7 @@ export class VoucherService {
     }
 
     static async editVoucher(data: EditVoucherDTO, userId: string) {
-        const { title, description, increment } = data;
+        const { title, description, increment, isFavourite } = data;
 
         await VoucherService.checkIfVoucherDoesnotExists(title, userId);
 
@@ -271,12 +259,19 @@ export class VoucherService {
             update.description = description;
         }
 
-        if (increment < 0) {
-            return ApiError.badRequest("increment should not be a negative number")
+        if (increment) {
+            if (increment < 0) {
+                return ApiError.badRequest("increment should not be a negative number")
+            }
+            update.$inc = { increment };
         }
 
-        if (increment !== undefined) {
-            update.$inc = { increment };
+        if (isFavourite !== undefined) {
+            if (isFavourite) {
+                update.favourite = new Date();
+            } else {
+                update.favourite = null;
+            }
         }
 
         const updatedVoucher = await Voucher.findOneAndUpdate(

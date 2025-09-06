@@ -5,9 +5,6 @@ export class VoucherSchema {
         title: z
             .string()
             .min(2, { message: "title is required. It must be at least 2 characters long" }),
-        category: z
-            .string()
-            .min(2, { message: "category name is required. It must be at least 2 characters long" }),
         description: z
             .string()
             .min(2, { message: "description is required. It must be at least 2 characters long" }),
@@ -23,9 +20,6 @@ export class VoucherSchema {
     })
 
     static getVouchers = z.object({
-        category: z
-            .string()
-            .min(2, { message: "category name is required. It must be at least 2 characters long" }),
         sortBy: z
             .enum(["alphabetically", "createdAt"])
             .default("createdAt"),
@@ -43,11 +37,16 @@ export class VoucherSchema {
             .min(2, { message: "title is required. It must be at least 2 characters long" }),
         description: z
             .string()
-            .min(2, { message: "description is required. It must be at least 2 characters long" }),
+            .min(2, { message: "description is required. It must be at least 2 characters long" })
+            .optional(),
         increment: z
             .number()
             .int({ message: "increment must be a positive integer" })
-            .min(1, { message: "increment must be at least 1" }),
+            .min(1, { message: "increment must be at least 1" })
+            .optional(),
+        isFavourite: z
+            .boolean()
+            .optional(),
     })
 
     static redeemVoucher = z.object({
@@ -70,6 +69,9 @@ export class VoucherSchema {
             .min(2, { message: "password is required. It must be at least 2 characters long" }),
         usageId: z
             .uuid({ message: "usageId must be a valid UUID" }),
+        proofImage: z
+            .url()
+            .optional(),
     })
 }
 

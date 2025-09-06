@@ -1,10 +1,9 @@
-import type { ObjectId } from "mongoose";
 import jwt, { type SignOptions, type VerifyOptions, type JwtPayload } from "jsonwebtoken";
 import { ApiError } from "../utils/responseHandler.js";
 import { config } from "./index.js";
 
 export interface AuthenticatedUser {
-  userId: ObjectId;
+  userId: string;
   email: string;
   userName: string;
 }

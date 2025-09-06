@@ -3,19 +3,17 @@ import mongoose, { Schema } from "mongoose";
 
 interface IVoucher extends Document {
     title: string;
-    category: string;
     description: string;
     icon: string;
     count: number;
     voucherCreator: string;
     voucherRecipient: string;
-    favourite?: Date;
+    favourite?: Date | null;
 }
 
 const VoucherSchema: Schema<IVoucher> = new Schema(
   {
     title: { type: String, required: true, unique: true },
-    category: { type: String, required: true },
     description: { type: String, required: true },
     icon: { type: String, required: true },
     count: { type: Number, required: true },
@@ -29,6 +27,6 @@ const VoucherSchema: Schema<IVoucher> = new Schema(
 );
 
 VoucherSchema.index({ title: 1, voucherCreator: 1 }, { unique: true });
-VoucherSchema.index({ voucherRecipient: 1, category: 1 });
+VoucherSchema.index({ voucherRecipient: 1 });
 
 export default mongoose.model<IVoucher>("Voucher", VoucherSchema);

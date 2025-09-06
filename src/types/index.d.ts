@@ -1,13 +1,9 @@
-import type { ObjectId } from "mongoose";
+import { AuthenticatedUser } from "../config/token";
 
 declare global {
   declare namespace Express {
     export interface Request {
-      user?: {
-        userId: ObjectId;
-        email: string;
-        userName: string;
-      };
+      user?: AuthenticatedUser;
     }
   }
 }
